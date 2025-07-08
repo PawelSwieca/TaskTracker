@@ -42,11 +42,11 @@ async function loadTasks() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        tasks = await response.json(); // <- prawdziwe dane z backendu
+        tasks = await response.json(); 
         filteredTasks = [...tasks];
 
-        renderTasks();        // <- rysuj zadania
-        updateStatistics();   // <- statystyki jeśli masz
+        renderTasks();        
+        updateStatistics();   
 
     } catch (error) {
         console.error('Błąd podczas ładowania zadań:', error);
@@ -54,58 +54,6 @@ async function loadTasks() {
     } finally {
         showLoading(false);
     }
-}
-
-
-// Symulacja wywołania API
-function simulateApiCall() {
-    return new Promise(resolve => setTimeout(resolve, 1000));
-}
-
-// Generowanie przykładowych danych - usuń gdy dodasz prawdziwe API
-function generateMockTasks() {
-    return [
-        {
-            id: 1,
-            title: "Przygotowanie prezentacji Q4",
-            description: "Stworzenie prezentacji z wynikami ostatniego kwartału dla zarządu",
-            priority: "HIGH",
-            status: "TODO",
-            createdDate: "2025-06-25",
-            dueDate: "2025-06-30",
-            assignedTo: "Jan Kowalski"
-        },
-        {
-            id: 2,
-            title: "Code review modułu płatności",
-            description: "Przegląd kodu nowego modułu obsługi płatności online",
-            priority: "MEDIUM",
-            status: "IN_PROGRESS",
-            createdDate: "2025-06-20",
-            dueDate: "2025-06-28",
-            assignedTo: "Anna Nowak"
-        },
-        {
-            id: 3,
-            title: "Aktualizacja dokumentacji API",
-            description: "Zaktualizowanie dokumentacji REST API po ostatnich zmianach",
-            priority: "LOW",
-            status: "COMPLETED",
-            createdDate: "2025-06-15",
-            dueDate: "2025-06-25",
-            assignedTo: "Piotr Wiśniewski"
-        },
-        {
-            id: 4,
-            title: "Naprawa błędu w systemie logowania",
-            description: "Krytyczny błąd uniemożliwiający logowanie niektórym użytkownikom",
-            priority: "HIGH",
-            status: "OVERDUE",
-            createdDate: "2025-06-10",
-            dueDate: "2025-06-20",
-            assignedTo: "Maria Kowalczyk"
-        }
-    ];
 }
 
 // Renderowanie listy zadań
@@ -140,7 +88,10 @@ function renderTasks() {
             <div class="task-item" data-task-id="${taskId}">
                 <div class="task-header">
                     <div class="task-title">${escapeHtml(title)}</div>
-                    <div class="task-priority priority-${priority.toLowerCase()}">${getPriorityText(priority)}</div>
+                    <div class="task-priority ${getPriorityClassName(priority)}">
+                        ${getPriorityText(priority)}
+                        <span class="priority-icon">${getPriorityIcon(priority)}</span>
+                    </div>
                 </div>
                 <div class="task-description">${escapeHtml(description)}</div>
                 <div class="task-meta">
@@ -148,7 +99,7 @@ function renderTasks() {
                         <span>📅 Added: ${formatDate(createdDate)}</span>
                         <span>⏰ Deadline: ${formatDate(dueDate)}</span>
                     </div>
-                    <div class="task-status status-${status.toLowerCase().replace('_', '-')}">${getStatusText(status)}</div>
+                    <div class="task-status ${getStatusClassName(status)}">${getStatusText(status)}</div>
                 </div>
                 <div class="task-actions">
                     <button class="action-btn btn-edit" onclick="editTask(${taskId})">✏️ Edit</button>
@@ -181,8 +132,10 @@ function filterTasks() {
     filteredTasks = tasks.filter(task => {
         const matchesSearch = task.title.toLowerCase().includes(searchTerm) ||
             task.description.toLowerCase().includes(searchTerm);
-        const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-        const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+        const matchesStatus = statusFilter === 'all' ||
+            normalizeStatus(task.status) === normalizeStatus(statusFilter);
+        const matchesPriority = priorityFilter === 'all' ||
+            normalizePriority(task.priority) === normalizePriority(priorityFilter);
 
         return matchesSearch && matchesStatus && matchesPriority;
     });
@@ -194,11 +147,23 @@ function filterTasks() {
 // Aktualizacja statystyk
 function updateStatistics() {
     const stats = filteredTasks.reduce((acc, task) => {
-        switch(task.status) {
-            case 'TODO': acc.todo++; break;
-            case 'IN_PROGRESS': acc.progress++; break;
-            case 'COMPLETED': acc.done++; break;
-            case 'OVERDUE': acc.overdue++; break;
+        const status = task.status?.toUpperCase();
+
+        switch(status) {
+            case 'TODO':
+                acc.todo++;
+                break;
+            case 'IN_PROGRESS':
+                acc.progress++;
+                break;
+            case 'DONE':
+                acc.done++;
+                break;
+            case 'OUTDATED':
+                acc.overdue++;
+                break;
+            default:
+                acc.todo++; // domyślnie traktujemy jako todo
         }
         return acc;
     }, { todo: 0, progress: 0, done: 0, overdue: 0 });
@@ -216,7 +181,8 @@ function getPriorityText(priority) {
         'MEDIUM': 'Średni',
         'LOW': 'Niski'
     };
-    return priorities[priority] || priority;
+    const normalizedPriority = normalizePriority(priority);
+    return priorities[normalizedPriority] || 'Średni';
 }
 
 function getStatusText(status) {
@@ -224,9 +190,94 @@ function getStatusText(status) {
         'TODO': 'Do wykonania',
         'IN_PROGRESS': 'W trakcie',
         'COMPLETED': 'Zakończone',
-        'OVERDUE': 'Przeterminowane'
+        'OUTDATED': 'Przeterminowane'
     };
     return statuses[status] || status;
+}
+function normalizeStatus(status) {
+    // Konwertuj do wielkiech liter i usuń spacje
+    status = status.toUpperCase().trim();
+
+    // Mapowanie różnych możliwych wartości na standardowe statusy
+    const statusMap = {
+        'DO_ZROBIENIA': 'TODO',
+        'NOWE': 'TODO',
+        'NEW': 'TODO',
+
+        'W_TRAKCIE': 'IN_PROGRESS',
+        'IN_PROGRESS': 'IN_PROGRESS',
+        'PROGRESS': 'IN_PROGRESS',
+
+        'ZAKONCZONE': 'COMPLETED',
+        'COMPLETED': 'COMPLETED',
+        'DONE': 'COMPLETED',
+        'FINISHED': 'COMPLETED',
+
+        'PRZETERMINOWANE': 'OUTDATED',
+        'OUTDATED': 'OUTDATED',
+        'DELAYED': 'OUTDATED'
+    };
+
+    return statusMap[status] || status;
+}
+
+function normalizePriority(priority) {
+    priority = (priority || '').toUpperCase().trim();
+
+    const priorityMap = {
+        'WYSOKI': 'HIGH',
+        'ŚREDNI': 'MEDIUM',
+        'NISKI': 'LOW',
+        'HIGH': 'HIGH',
+        'MEDIUM': 'MEDIUM',
+        'LOW': 'LOW'
+    };
+
+    return priorityMap[priority] || 'MEDIUM'; // domyślnie MEDIUM
+}
+
+function getStatusClassName(status) {
+    const normalizedStatus = normalizeStatus(status);
+    switch(normalizedStatus) {
+        case 'TODO':
+            return 'status-todo';
+        case 'IN_PROGRESS':
+            return 'status-progress';
+        case 'COMPLETED':
+            return 'status-done';
+        case 'OUTDATED':
+            return 'status-outdated';
+        default:
+            return 'status-todo'; // default status
+    }
+}
+
+function getPriorityClassName(priority) {
+    const normalizedPriority = normalizePriority(priority);
+    switch(normalizedPriority) {
+        case 'HIGH':
+            return 'priority-high';
+        case 'MEDIUM':
+            return 'priority-medium';
+        case 'LOW':
+            return 'priority-low';
+        default:
+            return 'priority-medium';
+    }
+}
+
+function getPriorityIcon(priority) {
+    const normalizedPriority = normalizePriority(priority);
+    switch(normalizedPriority) {
+        case 'HIGH':
+            return '🔴';
+        case 'MEDIUM':
+            return '🟡';
+        case 'LOW':
+            return '🟢';
+        default:
+            return '⚪';
+    }
 }
 
 function formatDate(dateString) {
@@ -283,15 +334,15 @@ function deleteTask(taskId) {
     }
 }
 
-// Keyboard shortcuts
+// Skróty klawiszowe
 document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + K = Focus search
+    // Ctrl/Cmd + K = Wyszukiwanie zadań
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         document.getElementById('searchTasks').focus();
     }
 
-    // Ctrl/Cmd + N = New task
+    // Ctrl/Cmd + N = Dodanie nowego zadania
     if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
         addNewTask();
