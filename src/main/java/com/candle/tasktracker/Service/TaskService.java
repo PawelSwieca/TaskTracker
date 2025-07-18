@@ -70,7 +70,7 @@ public class TaskService {
     }
 
     public Task updateTask(Integer taskId, String title, String description, LocalDate dueDate,
-                           UserEntity user, String priorityName) {
+                           UserEntity user, String priorityName, String statusName) {
 
         // Znajdź zadanie
         Task existingTask = addTaskRepository.findById(taskId)
@@ -92,6 +92,9 @@ public class TaskService {
 
         if (priorityName != null && !priorityName.isEmpty()) {
             updateTaskPriority(savedTask, priorityName);
+        }
+        if (statusName != null && !statusName.isEmpty()) {
+            updateTaskStatus(savedTask, statusName);
         }
 
         return savedTask;
@@ -128,6 +131,26 @@ public class TaskService {
             tasksPriority = new TasksPriority(task, newPriority);
         }
         tasksPriorityRepository.save(tasksPriority);
+    }
+
+    private void updateTaskStatus(Task task, String statusName) {
+
+        Optional<TasksStatus> existingTaskStatus = tasksStatusRepository.findByTask(task);
+
+
+        Status newStatus = statusRepository.findByName(statusName.toLowerCase())
+                .orElseThrow(() -> new RuntimeException("Priority not found: " + statusName));
+
+        TasksStatus tasksStatus;
+        if (existingTaskStatus.isPresent()) {
+
+            tasksStatus = existingTaskStatus.get();
+            tasksStatus.setStatus(newStatus);
+        } else {
+
+            tasksStatus = new TasksStatus(task, newStatus);
+        }
+        tasksStatusRepository.save(tasksStatus);
     }
 
 }

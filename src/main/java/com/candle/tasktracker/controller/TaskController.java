@@ -65,7 +65,7 @@ public class TaskController {
 
             // Aktualizuj zadanie
             Task updatedTask = taskService.updateTask(taskId, request.getTitle(), request.getDescription(),
-                    request.getDueDate(), user, request.getPriority());
+                    request.getDueDate(), user, request.getPriority(), request.getStatus());
 
             return ResponseEntity.ok(updatedTask);
         } catch (RuntimeException e) {

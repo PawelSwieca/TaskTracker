@@ -414,7 +414,7 @@ function renderEditTaskModal(task) {
     const dueDate = task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '';
 
     modal.innerHTML = `
-        <div class="modal-content">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
             <div class="modal-header">
                 <h2>Edit Task</h2>
                 <span class="close-modal">&times;</span>
@@ -434,6 +434,15 @@ function renderEditTaskModal(task) {
                     <label for="editTaskPriority">Priority</label>
                     <select id="editTaskPriority" name="priority">
                         ${['LOW', 'MEDIUM', 'HIGH'].map(p =>
+        `<option value="${p}" ${p === priority ? 'selected' : ''}>${p.charAt(0) + p.slice(1).toLowerCase()}</option>`
+    ).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editTaskStatus">Status</label>
+                    <select id="editTaskStatus" name="status">
+                        ${['TO DO', 'IN PROGRESS'].map(p =>
         `<option value="${p}" ${p === priority ? 'selected' : ''}>${p.charAt(0) + p.slice(1).toLowerCase()}</option>`
     ).join('')}
                     </select>
@@ -477,6 +486,7 @@ function renderEditTaskModal(task) {
             title: updatedTitle,
             description: form.elements.description.value.trim() || '',
             priority: form.elements.priority.value,
+            status: form.elements.status.value,
             dueDate: form.elements.dueDate.value
         };
 

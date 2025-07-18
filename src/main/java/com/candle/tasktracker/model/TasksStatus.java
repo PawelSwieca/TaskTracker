@@ -3,6 +3,7 @@ package com.candle.tasktracker.model;
 import com.candle.tasktracker.model.Id.TasksStatusId;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "tasks_status")
@@ -19,8 +20,9 @@ public class TasksStatus {
     private Task task;
 
     @ManyToOne
-    @JoinColumn(name = "status_id", insertable = false, updatable = false)
+    @JoinColumn(name = "status_id", insertable = false, updatable = true)
     @Getter
+    @Setter
     private Status status;
 
     public TasksStatus(){}

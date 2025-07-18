@@ -18,4 +18,7 @@ public class UpdateTaskRequest {
     @Getter
     @Setter
     private String priority;
+    @Getter
+    @Setter
+    private String status;
 }
