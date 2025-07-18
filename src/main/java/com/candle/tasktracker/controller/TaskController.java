@@ -1,15 +1,18 @@
 package com.candle.tasktracker.controller;
 
+import com.candle.tasktracker.Service.TaskService;
+import com.candle.tasktracker.dto.CreateTaskRequest;
 import com.candle.tasktracker.dto.TaskDTO;
-import com.candle.tasktracker.model.Task;
-import com.candle.tasktracker.model.UserEntity;
-import com.candle.tasktracker.repository.TaskRepository;
-import com.candle.tasktracker.repository.UserRepository;
+import com.candle.tasktracker.dto.UpdateTaskRequest;
+import com.candle.tasktracker.model.*;
+import com.candle.tasktracker.repository.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,11 +21,14 @@ import java.util.stream.Collectors;
 public class TaskController {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final TaskService taskService;
 
     @Autowired
-    public TaskController(TaskRepository taskRepository, UserRepository userRepository) {
+    public TaskController(TaskRepository taskRepository, UserRepository userRepository,
+                          TaskService taskService) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
+        this.taskService = taskService;
     }
 
     @GetMapping
@@ -32,6 +38,39 @@ public class TaskController {
         return tasks.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @PostMapping
+    public ResponseEntity<TaskDTO> createTask(@RequestBody CreateTaskRequest request,
+                                              @AuthenticationPrincipal UserDetails userDetails) {
+        UserEntity user = userRepository.findByUsername(userDetails.getUsername());
+        Task task = taskService.createNewTask(
+                request.getTitle(),
+                request.getDescription(),
+                request.getDueDate(),
+                user,
+                request.getPriority(),
+                "todo"
+        );
+        return ResponseEntity.ok(convertToDTO(task));
+    }
+
+    @PutMapping("/{taskId}")
+    public ResponseEntity<Task> updateTask(@PathVariable Integer taskId,
+                                           @RequestBody UpdateTaskRequest request,
+                                           Principal principal) {
+        try {
+            // Znajdź użytkownika
+            UserEntity user = userRepository.findByUsername(principal.getName());
+
+            // Aktualizuj zadanie
+            Task updatedTask = taskService.updateTask(taskId, request.getTitle(), request.getDescription(),
+                    request.getDueDate(), user, request.getPriority());
+
+            return ResponseEntity.ok(updatedTask);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     private TaskDTO convertToDTO(Task task) {
@@ -58,7 +97,7 @@ public class TaskController {
         }
         // Pobieranie priorytetu z relacji
         if (task.getCurrentPriority() != null) {
-            dto.setPriority(task.getCurrentPriority().getPriority_name());
+            dto.setPriority(task.getCurrentPriority().getPriorityName());
         }
 
 

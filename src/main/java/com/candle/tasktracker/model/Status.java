@@ -2,17 +2,17 @@ package com.candle.tasktracker.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 
 @Entity
 @Table(name = "status")
 public class Status {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Getter
     private int status_id;
 
     @Getter
-    @Setter
+    @Column(name = "name")
     private String name;
 
 }

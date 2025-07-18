@@ -1,9 +1,8 @@
-// Mock data - zastąp wywołaniami API do bazy Oracle
 let tasks = [];
 let filteredTasks = [];
 
 // Inicjalizacja strony
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadTasks();
     setupEventListeners();
 });
@@ -42,11 +41,11 @@ async function loadTasks() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        tasks = await response.json(); 
+        tasks = await response.json();
         filteredTasks = [...tasks];
 
-        renderTasks();        
-        updateStatistics();   
+        renderTasks();
+        updateStatistics();
 
     } catch (error) {
         console.error('Błąd podczas ładowania zadań:', error);
@@ -149,11 +148,11 @@ function updateStatistics() {
     const stats = filteredTasks.reduce((acc, task) => {
         const status = task.status?.toUpperCase();
 
-        switch(status) {
+        switch (status) {
             case 'TODO':
                 acc.todo++;
                 break;
-            case 'IN_PROGRESS':
+            case 'IN PROGRESS':
                 acc.progress++;
                 break;
             case 'DONE':
@@ -166,7 +165,7 @@ function updateStatistics() {
                 acc.todo++; // domyślnie traktujemy jako todo
         }
         return acc;
-    }, { todo: 0, progress: 0, done: 0, overdue: 0 });
+    }, {todo: 0, progress: 0, done: 0, overdue: 0});
 
     document.getElementById('todoCount').textContent = stats.todo;
     document.getElementById('progressCount').textContent = stats.progress;
@@ -177,12 +176,12 @@ function updateStatistics() {
 // Funkcje pomocnicze
 function getPriorityText(priority) {
     const priorities = {
-        'HIGH': 'Wysoki',
-        'MEDIUM': 'Średni',
-        'LOW': 'Niski'
+        'HIGH': 'High',
+        'MEDIUM': 'Medium',
+        'LOW': 'Low'
     };
     const normalizedPriority = normalizePriority(priority);
-    return priorities[normalizedPriority] || 'Średni';
+    return priorities[normalizedPriority] || 'Medium';
 }
 
 function getStatusText(status) {
@@ -194,6 +193,7 @@ function getStatusText(status) {
     };
     return statuses[status] || status;
 }
+
 function normalizeStatus(status) {
     // Konwertuj do wielkiech liter i usuń spacje
     status = status.toUpperCase().trim();
@@ -205,7 +205,7 @@ function normalizeStatus(status) {
         'NEW': 'TODO',
 
         'W_TRAKCIE': 'IN_PROGRESS',
-        'IN_PROGRESS': 'IN_PROGRESS',
+        'IN PROGRESS': 'IN_PROGRESS',
         'PROGRESS': 'IN_PROGRESS',
 
         'ZAKONCZONE': 'COMPLETED',
@@ -218,7 +218,17 @@ function normalizeStatus(status) {
         'DELAYED': 'OUTDATED'
     };
 
-    return statusMap[status] || status;
+    if (statusMap[status]) {
+        return statusMap[status];
+    }
+
+    const standardStatuses = ['TODO', 'IN_PROGRESS', 'COMPLETED', 'OUTDATED'];
+    if (standardStatuses.includes(status)) {
+        return status;
+    }
+
+    return 'TODO';
+
 }
 
 function normalizePriority(priority) {
@@ -238,7 +248,7 @@ function normalizePriority(priority) {
 
 function getStatusClassName(status) {
     const normalizedStatus = normalizeStatus(status);
-    switch(normalizedStatus) {
+    switch (normalizedStatus) {
         case 'TODO':
             return 'status-todo';
         case 'IN_PROGRESS':
@@ -254,7 +264,7 @@ function getStatusClassName(status) {
 
 function getPriorityClassName(priority) {
     const normalizedPriority = normalizePriority(priority);
-    switch(normalizedPriority) {
+    switch (normalizedPriority) {
         case 'HIGH':
             return 'priority-high';
         case 'MEDIUM':
@@ -268,7 +278,7 @@ function getPriorityClassName(priority) {
 
 function getPriorityIcon(priority) {
     const normalizedPriority = normalizePriority(priority);
-    switch(normalizedPriority) {
+    switch (normalizedPriority) {
         case 'HIGH':
             return '🔴';
         case 'MEDIUM':
@@ -304,38 +314,242 @@ function showError(message) {
     alert(message);
 }
 
-// Akcje na zadaniach - TODO: Implementuj wywołania API
-function addNewTask() {
-    // TODO: Otwórz modal/formularz dodawania nowego zadania
-    alert('Funkcjonalność dodawania zadań - do implementacji');
+async function addNewTask() {
+
+    const modal = document.getElementById('taskModal');
+    const closeButtons = document.getElementsByClassName('close-modal');
+    const form = document.getElementById('taskForm');
+
+    modal.style.display = 'block';
+
+    Array.from(closeButtons).forEach(button => {
+        button.onclick = () => {
+            modal.style.display = 'none';
+        }
+    });
+
+    window.onclick = (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const title = document.getElementById('taskTitle').value.trim();
+        if (!title) {
+            alert('Title is required!');
+            return;
+        }
+
+        const formData = {
+            title: title,
+            description: document.getElementById('taskDescription').value.trim() || '',
+            priority: document.getElementById('taskPriority').value,
+            dueDate: document.getElementById('taskDueDate').value
+        };
+
+        try {
+            showLoading(true);
+
+            // Pobieranie tokenów CSRF
+            const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            const headers = {
+                'Content-Type': 'application/json',
+                [header]: token
+            };
+
+
+            const response = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server response:', errorText);
+                throw new Error(`Server error: ${response.status}. Details: ${errorText}`);
+            }
+
+            const newTask = await response.json();
+            tasks.push(newTask);
+            filterTasks();
+
+            modal.style.display = 'none';
+            form.reset();
+
+            alert('Task has been added successfully!');
+
+        } catch (error) {
+            console.error('Error details', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            showLoading(false);
+        }
+    };
 }
 
 function editTask(taskId) {
-    // TODO: Otwórz modal/formularz edycji zadania
-    alert(`Edycja zadania ID: ${taskId} - do implementacji`);
+
+    const task = tasks.find(t => t.id === taskId || t.task_id === taskId);
+
+    if (!task) {
+        alert('Nie znaleziono zadania o podanym ID');
+        return;
+    }
+
+    renderEditTaskModal(task);
+}
+
+function renderEditTaskModal(task) {
+    const modal = document.getElementById('editTaskModal');
+    const taskId = task.id || task.task_id;
+    const title = task.title || '';
+    const description = task.description || '';
+    const priority = normalizePriority(task.priority) || 'MEDIUM';
+    const dueDate = task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '';
+
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Task</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="editTaskForm" class="modal-form">
+                <div class="form-group">
+                    <label for="editTaskTitle">Title</label>
+                    <input type="text" id="editTaskTitle" name="title" required value="${title}">
+                </div>
+
+                <div class="form-group">
+                    <label for="editTaskDescription">Description</label>
+                    <textarea id="editTaskDescription" name="description" rows="3">${description}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="editTaskPriority">Priority</label>
+                    <select id="editTaskPriority" name="priority">
+                        ${['LOW', 'MEDIUM', 'HIGH'].map(p =>
+        `<option value="${p}" ${p === priority ? 'selected' : ''}>${p.charAt(0) + p.slice(1).toLowerCase()}</option>`
+    ).join('')}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editTaskDueDate">Due date:</label>
+                    <input type="date" id="editTaskDueDate" name="dueDate" value="${dueDate}">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-modal">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    modal.style.display = 'block';
+
+    // Obsługa zamykania modala
+    modal.querySelectorAll('.close-modal').forEach(btn => {
+        btn.onclick = () => modal.style.display = 'none';
+    });
+    window.onclick = (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    };
+
+    const form = modal.querySelector('#editTaskForm');
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const updatedTitle = form.elements.title.value.trim();
+        if (!updatedTitle) {
+            alert('Title is required!');
+            return;
+        }
+
+        const updatedTask = {
+            id: taskId,
+            title: updatedTitle,
+            description: form.elements.description.value.trim() || '',
+            priority: form.elements.priority.value,
+            dueDate: form.elements.dueDate.value
+        };
+
+        try {
+            showLoading(true);
+
+            const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [header]: token
+                },
+                body: JSON.stringify(updatedTask)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server error: ${response.status}. Details: ${errorText}`);
+            }
+
+            const responseText = await response.text();
+            let serverResponse;
+
+            try {
+                serverResponse = JSON.parse(responseText);
+            } catch (err) {
+                throw new Error('Server returned invalid JSON');
+            }
+
+            const updatedTaskFromServer = {
+                id: serverResponse.id,
+                title: serverResponse.title || '',
+                description: serverResponse.description || '',
+                priority: serverResponse.currentPriority?.priorityName?.toUpperCase() ||
+                    serverResponse.priority?.toUpperCase() || 'MEDIUM',
+                dueDate: serverResponse.dueDate || '',
+                creationDate: serverResponse.creationDate || null,
+                completionDate: serverResponse.completionDate || null,
+                status: serverResponse.currentStatus?.name || serverResponse.status?.name || 'to do'
+            };
+
+            const index = tasks.findIndex(t => (t.id || t.task_id) === taskId);
+            if (index !== -1) tasks[index] = updatedTaskFromServer;
+
+            filterTasks();
+            modal.style.display = 'none';
+            alert('Task has been updated successfully!');
+        } catch (error) {
+            console.error('Error updating task:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            showLoading(false);
+        }
+    };
 }
 
 function completeTask(taskId) {
     // TODO: Wywołaj API do oznaczenia zadania jako ukończone
-    if (confirm('Czy na pewno chcesz oznaczyć to zadanie jako ukończone?')) {
-        const task = tasks.find(t => t.id === taskId);
-        if (task) {
-            task.status = 'COMPLETED';
-            filterTasks();
-        }
-    }
+    renderTasks()
 }
 
 function deleteTask(taskId) {
     // TODO: Wywołaj API do usunięcia zadania
     if (confirm('Czy na pewno chcesz usunąć to zadanie?')) {
-        tasks = tasks.filter(t => t.id !== taskId);
-        filterTasks();
+        renderTasks()
     }
 }
 
 // Skróty klawiszowe
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     // Ctrl/Cmd + K = Wyszukiwanie zadań
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();

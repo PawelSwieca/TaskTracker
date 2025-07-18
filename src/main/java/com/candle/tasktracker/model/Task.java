@@ -1,8 +1,11 @@
 package com.candle.tasktracker.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -11,19 +14,38 @@ import java.util.Set;
 
 @Entity
 @Table(name = "tasks")
+@Getter
+@Setter
+@NoArgsConstructor
+@Builder
+@AllArgsConstructor
+
 public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty("id")
     @Getter
     private int task_id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id") // klucz obcy do użytkownika
+    @JoinColumn(name = "user_id")
+    @JsonBackReference
+    @JsonIgnoreProperties({"tasks", "taskStatuses", "taskPriorities"})
     private UserEntity user;
 
     @OneToMany(mappedBy = "task")
+    @JsonIgnore
     private Set<TasksStatus> taskStatuses = new HashSet<>();
+
+    public Task(String title, String description, LocalDate dueDate, UserEntity user) {
+        this.title = title;
+        this.description = description;
+        this.creationDate = LocalDate.now();
+        this.dueDate = dueDate;
+        this.user = user;
+    }
+
 
 
     // Metoda pomocnicza do pobierania aktualnego statusu
@@ -41,6 +63,7 @@ public class Task {
 
 
     @OneToMany(mappedBy = "task")
+    @JsonIgnore
     private Set<TasksPriority> taskPriorities = new HashSet<>();
 
     // Metoda pomocnicza do pobierania aktualnego priorytetu

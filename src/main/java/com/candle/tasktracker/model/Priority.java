@@ -9,10 +9,10 @@ import lombok.Setter;
 public class Priority {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Getter
     private int priority_id;
 
     @Getter
-    @Setter
     @Column(name = "priority_name")
-    private String priority_name;
+    private String priorityName;
 }
