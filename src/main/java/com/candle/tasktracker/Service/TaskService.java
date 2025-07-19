@@ -100,6 +100,24 @@ public class TaskService {
         return savedTask;
     }
 
+    public Task completeTask(Integer taskId, UserEntity user) {
+        Task existingTask = addTaskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
+
+
+        if (!(existingTask.getUser().getId() == user.getId())) {
+            throw new RuntimeException("Access denied: User is not owner of this task");
+        }
+
+        existingTask.setCompletionDate(LocalDate.now());
+
+        Task savedTask = addTaskRepository.save(existingTask);
+
+        updateTaskStatus(savedTask, "done");
+
+        return savedTask;
+    }
+
     private String normalizeStatus(String status) {
         if (status == null) return "to do";
 

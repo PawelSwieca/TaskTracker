@@ -73,6 +73,23 @@ public class TaskController {
         }
     }
 
+    @PutMapping("/complete/{taskId}")
+    public ResponseEntity<Task> completeTask(@PathVariable Integer taskId,
+                                             Principal principal) {
+        try {
+            // Znajdź użytkownika
+            UserEntity user = userRepository.findByUsername(principal.getName());
+
+            // Zmien status zadania na done
+            Task updatedTask = taskService.completeTask(taskId, user);
+
+            return ResponseEntity.ok(updatedTask);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+
+    }
+
     private TaskDTO convertToDTO(Task task) {
         TaskDTO dto = new TaskDTO();
         dto.setId(task.getTask_id());

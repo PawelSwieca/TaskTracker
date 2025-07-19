@@ -91,5 +91,6 @@ public class Task {
     private LocalDate dueDate;
     @Getter
     @Setter
+    @Column(name = "completion_date")
     private LocalDate completionDate;
 }

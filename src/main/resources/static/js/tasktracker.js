@@ -548,7 +548,119 @@ function renderEditTaskModal(task) {
 
 function completeTask(taskId) {
     // TODO: Wywołaj API do oznaczenia zadania jako ukończone
-    renderTasks()
+    const task = tasks.find(t => t.id === taskId || t.task_id === taskId);
+
+    if (!task) {
+        alert('Nie znaleziono zadania o podanym ID');
+        return;
+    }
+
+    renderInfoModal(task, "Confirm your task!",
+        `Are you sure you want to mark this task as completed?`, "Yes, complete it");
+    //appendSubmitFunction(task);
+
+
+}
+
+function renderInfoModal(task, modalTitle, modalDescription, confirmText) {
+    const modal = document.getElementById('infoModal');
+    const taskId = task.id || task.task_id;
+
+    modal.innerHTML = `
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>${modalTitle}</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body" style="padding: 2rem; text-align: center;">
+            <p style="margin-bottom: 1rem; font-size: 1.1rem; color: #374151;">
+                ${modalDescription}
+            </p>
+            <p style="margin-bottom: 2rem; font-size: 0.95rem; color: #6b7280;">
+                This action cannot be undone.
+            </p>
+        <div style="display: flex; justify-content: center; gap: 1rem;">
+            <form id="completeTaskForm">
+                <button type="submit" class="btn-primary">${confirmText}</button>
+                <button type="button" class="btn-secondary close-modal">No, cancel</button>
+            </form>
+        </div>
+        </div>
+    </div>`;
+
+    modal.querySelectorAll('.close-modal').forEach(btn => {
+        btn.onclick = () => modal.style.display = 'none';
+    });
+    window.onclick = (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    };
+
+    modal.style.display = 'block';
+
+    const form = modal.querySelector('#completeTaskForm');
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const updatedTask = {
+            id: taskId,
+            status: 'done',
+            completionDate: new Date().toISOString().split('T')[0]
+        };
+
+        try {
+            showLoading(true);
+
+            const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            const response = await fetch(`/api/tasks/complete/${taskId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [header]: token
+                },
+                body: JSON.stringify(updatedTask)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server error: ${response.status}. Details: ${errorText}`);
+            }
+
+            const responseText = await response.text();
+            let serverResponse;
+
+            try {
+                serverResponse = JSON.parse(responseText);
+            } catch (err) {
+                throw new Error('Server returned invalid JSON');
+            }
+
+            const updatedTaskFromServer = {
+                id: serverResponse.id,
+                title: serverResponse.title || '',
+                description: serverResponse.description || '',
+                priority: serverResponse.currentPriority?.priorityName?.toUpperCase() ||
+                    serverResponse.priority?.toUpperCase() || 'MEDIUM',
+                dueDate: serverResponse.dueDate || '',
+                creationDate: serverResponse.creationDate || null,
+                completionDate: serverResponse.completionDate || null,
+                status: serverResponse.currentStatus?.name || serverResponse.status?.name || 'to do'
+            };
+
+            const index = tasks.findIndex(t => (t.id || t.task_id) === taskId);
+            if (index !== -1) tasks[index] = updatedTaskFromServer;
+
+            filterTasks();
+            modal.style.display = 'none';
+            alert('Task has been completed successfully!');
+        } catch (error) {
+            console.error('Error updating task:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            showLoading(false);
+        }
+    };
 }
 
 function deleteTask(taskId) {
