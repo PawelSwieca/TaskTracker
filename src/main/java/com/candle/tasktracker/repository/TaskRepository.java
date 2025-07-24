@@ -1,6 +1,7 @@
 package com.candle.tasktracker.repository;
 
 import com.candle.tasktracker.model.Task;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -14,4 +15,6 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
             "LEFT JOIN FETCH tp.priority p " +
             "WHERE t.user.id = :userId")
     List<Task> findByUserId(int userId);
+
+
 }

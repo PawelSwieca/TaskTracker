@@ -547,7 +547,6 @@ function renderEditTaskModal(task) {
 }
 
 function completeTask(taskId) {
-    // TODO: Wywołaj API do oznaczenia zadania jako ukończone
     const task = tasks.find(t => t.id === taskId || t.task_id === taskId);
 
     if (!task) {
@@ -555,16 +554,18 @@ function completeTask(taskId) {
         return;
     }
 
-    renderInfoModal(task, "Confirm your task!",
-        `Are you sure you want to mark this task as completed?`, "Yes, complete it");
-    //appendSubmitFunction(task);
+    const modal = document.getElementById('infoModal');
+    const formId = "completeTaskForm";
+
+    renderInfoModal(task, modal, taskId, "Confirm your task!",
+        `Are you sure you want to mark this task as completed?`, "Yes, complete it", formId);
+
+    setInfoModalAction(modal, taskId, formId);
 
 
 }
 
-function renderInfoModal(task, modalTitle, modalDescription, confirmText) {
-    const modal = document.getElementById('infoModal');
-    const taskId = task.id || task.task_id;
+function renderInfoModal(task, modal, taskId, modalTitle, modalDescription, confirmText, formId) {
 
     modal.innerHTML = `
     <div class="modal-content">
@@ -580,7 +581,7 @@ function renderInfoModal(task, modalTitle, modalDescription, confirmText) {
                 This action cannot be undone.
             </p>
         <div style="display: flex; justify-content: center; gap: 1rem;">
-            <form id="completeTaskForm">
+            <form id="${formId}">
                 <button type="submit" class="btn-primary">${confirmText}</button>
                 <button type="button" class="btn-secondary close-modal">No, cancel</button>
             </form>
@@ -597,7 +598,23 @@ function renderInfoModal(task, modalTitle, modalDescription, confirmText) {
 
     modal.style.display = 'block';
 
-    const form = modal.querySelector('#completeTaskForm');
+}
+
+function deleteTask(taskId) {
+
+    const task = tasks.find(t => t.id === taskId || t.task_id === taskId);
+
+    const modal = document.getElementById('infoModal');
+    const formId = "deleteTaskForm";
+
+    renderInfoModal(task, modal, taskId, "Delete task!",
+        `Are you sure you want to delete this task`, "Yes, delete it", formId);
+
+    setDeleteModalAction(modal, taskId, formId);
+}
+
+function setInfoModalAction(modal, taskId, formId) {
+    const form = modal.querySelector(`#${formId}`);
     form.onsubmit = async (e) => {
         e.preventDefault();
 
@@ -663,11 +680,44 @@ function renderInfoModal(task, modalTitle, modalDescription, confirmText) {
     };
 }
 
-function deleteTask(taskId) {
-    // TODO: Wywołaj API do usunięcia zadania
-    if (confirm('Czy na pewno chcesz usunąć to zadanie?')) {
-        renderTasks()
-    }
+function setDeleteModalAction(modal, taskId, formId) {
+    const form = modal.querySelector(`#${formId}`);
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            showLoading(true);
+
+            const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            const response = await fetch(`/api/tasks/delete/${taskId}`, {
+                method: 'DELETE',
+                headers: {
+                    [header]: token
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server error: ${response.status}. Details: ${errorText}`);
+            }
+
+            // Usuń z lokalnej listy
+            const index = tasks.findIndex(t => (t.id || t.task_id) === taskId);
+            if (index !== -1) tasks.splice(index, 1);
+
+            filterTasks();
+            modal.style.display = 'none';
+            alert('Task has been deleted successfully!');
+        } catch (error) {
+            console.error('Error deleting task:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            showLoading(false);
+        }
+    };
 }
 
 // Skróty klawiszowe

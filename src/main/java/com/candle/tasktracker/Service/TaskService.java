@@ -13,6 +13,7 @@ import java.util.Optional;
 @Service
 @Transactional
 public class TaskService {
+    private final TaskRepository taskRepository;
     private final AddTaskRepository addTaskRepository;
     private final PriorityRepository priorityRepository;
     private final TasksPriorityRepository tasksPriorityRepository;
@@ -28,10 +29,11 @@ public class TaskService {
 
 
     @Autowired
-    public TaskService(AddTaskRepository addTaskRepository,
+    public TaskService( TaskRepository taskRepository, AddTaskRepository addTaskRepository,
                        PriorityRepository priorityRepository,
                        TasksPriorityRepository tasksPriorityRepository,
                        TasksStatusRepository tasksStatusRepository, StatusRepository statusRepository) {
+        this.taskRepository = taskRepository;
         this.addTaskRepository = addTaskRepository;
         this.priorityRepository = priorityRepository;
         this.tasksPriorityRepository = tasksPriorityRepository;
@@ -116,6 +118,13 @@ public class TaskService {
         updateTaskStatus(savedTask, "done");
 
         return savedTask;
+    }
+
+    @Transactional
+    public void deleteTask(Integer taskId) {
+        tasksPriorityRepository.deleteByTaskId(taskId);
+        tasksStatusRepository.deleteByTaskId(taskId);
+        taskRepository.deleteById(taskId);
     }
 
     private String normalizeStatus(String status) {

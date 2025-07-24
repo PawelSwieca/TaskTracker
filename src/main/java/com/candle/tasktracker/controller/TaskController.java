@@ -6,6 +6,7 @@ import com.candle.tasktracker.dto.TaskDTO;
 import com.candle.tasktracker.dto.UpdateTaskRequest;
 import com.candle.tasktracker.model.*;
 import com.candle.tasktracker.repository.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +89,15 @@ public class TaskController {
             return ResponseEntity.notFound().build();
         }
 
+    }
+    @DeleteMapping("/delete/{taskId}")
+    public ResponseEntity<Void> deleteTask(@PathVariable Integer taskId, Principal principal) {
+        try {
+            taskService.deleteTask(taskId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     private TaskDTO convertToDTO(Task task) {
