@@ -1,6 +1,7 @@
 package com.candle.tasktracker.model.Id;
 
 import com.candle.tasktracker.model.Task;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
@@ -14,10 +15,6 @@ import java.util.Objects;
 public class TasksStatusId implements Serializable {
     private int status_id;
     private int task_id;
-
-    @ManyToOne
-    @JoinColumn(name = "task_id")
-    private Task task;
 
     @Override
     public boolean equals(Object o) {

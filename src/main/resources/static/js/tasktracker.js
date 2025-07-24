@@ -309,9 +309,29 @@ function showLoading(show) {
     }
 }
 
-function showError(message) {
-    // TODO: Implementuj wyświetlanie błędów
-    alert(message);
+function showMessageModal(message, isError = false) {
+    const modal = document.getElementById('messageModal');
+    const text = document.getElementById('messageModalText');
+
+    text.textContent = message;
+    modal.style.borderColor = isError ? '#dc2626' : '#16a34a';
+    text.style.color = isError ? '#dc2626' : '#16a34a';
+
+    modal.classList.add('show');
+
+
+    setTimeout(() => {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 400);
+    }, 3000);
+
+    modal.style.display = 'block';
+}
+
+function closeMessageModal() {
+    document.getElementById('messageModal').style.display = 'none';
 }
 
 async function addNewTask() {
@@ -339,7 +359,8 @@ async function addNewTask() {
 
         const title = document.getElementById('taskTitle').value.trim();
         if (!title) {
-            alert('Title is required!');
+            //alert('Title is required!');
+            showMessageModal('Title is required!', true);
             return;
         }
 
@@ -382,11 +403,13 @@ async function addNewTask() {
             modal.style.display = 'none';
             form.reset();
 
-            alert('Task has been added successfully!');
+            //alert('Task has been added successfully!');
+            showMessageModal('Task has been added successfully!');
 
         } catch (error) {
             console.error('Error details', error);
-            alert(`Error: ${error.message}`);
+            //alert(`Error: ${error.message}`);
+            showMessageModal(`Error: ${error.message}`, true);
         } finally {
             showLoading(false);
         }
@@ -398,7 +421,8 @@ function editTask(taskId) {
     const task = tasks.find(t => t.id === taskId || t.task_id === taskId);
 
     if (!task) {
-        alert('Nie znaleziono zadania o podanym ID');
+        //alert('Nie znaleziono zadania o podanym ID');
+        showMessageModal('No ID recognition tasks found', true);
         return;
     }
 
@@ -477,7 +501,8 @@ function renderEditTaskModal(task) {
 
         const updatedTitle = form.elements.title.value.trim();
         if (!updatedTitle) {
-            alert('Title is required!');
+            //alert('Title is required!');
+            showMessageModal('Title is required!', true);
             return;
         }
 
@@ -536,10 +561,12 @@ function renderEditTaskModal(task) {
 
             filterTasks();
             modal.style.display = 'none';
-            alert('Task has been updated successfully!');
+            //alert('Task has been updated successfully!');
+            showMessageModal('Task has been updated successfully!');
         } catch (error) {
             console.error('Error updating task:', error);
-            alert(`Error: ${error.message}`);
+            //alert(`Error: ${error.message}`);
+            showMessageModal(`Error: ${error.message}`, true);
         } finally {
             showLoading(false);
         }
@@ -550,7 +577,8 @@ function completeTask(taskId) {
     const task = tasks.find(t => t.id === taskId || t.task_id === taskId);
 
     if (!task) {
-        alert('Nie znaleziono zadania o podanym ID');
+        //alert('Nie znaleziono zadania o podanym ID');
+        showMessageModal('No ID recognition tasks found', true);
         return;
     }
 
@@ -670,10 +698,12 @@ function setInfoModalAction(modal, taskId, formId) {
 
             filterTasks();
             modal.style.display = 'none';
-            alert('Task has been completed successfully!');
+            //alert('Task has been completed successfully!');
+            showMessageModal('Task has been completed successfully!');
         } catch (error) {
             console.error('Error updating task:', error);
-            alert(`Error: ${error.message}`);
+            //alert(`Error: ${error.message}`);
+            showMessageModal(`Error: ${error.message}`, true);
         } finally {
             showLoading(false);
         }
@@ -710,10 +740,12 @@ function setDeleteModalAction(modal, taskId, formId) {
 
             filterTasks();
             modal.style.display = 'none';
-            alert('Task has been deleted successfully!');
+            //alert('Task has been deleted successfully!');
+            showMessageModal('Task has been deleted successfully!');
         } catch (error) {
             console.error('Error deleting task:', error);
-            alert(`Error: ${error.message}`);
+            //alert(`Error: ${error.message}`);
+            showMessageModal(`Error: ${error.message}`, true);
         } finally {
             showLoading(false);
         }
