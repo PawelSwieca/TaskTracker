@@ -16,15 +16,20 @@ public class UserEntity {
 
     @Getter
     @Setter
+    @Column(unique = true, nullable = false)
     private String username;
 
     @Getter
     @Setter
-    @Column(name = "password_hash")
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Column(unique = true, nullable = false)
+    @Getter
+    @Setter
     private String email;
 
-    @Column(name = "creation_date")
+    @Column(name = "creation_date", nullable = false)
+    @Setter
     private LocalDate creationDate;
 }
