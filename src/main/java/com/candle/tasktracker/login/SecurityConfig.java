@@ -56,14 +56,12 @@ public class SecurityConfig {
 
 
     @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http)
-            throws Exception {
-        return http
-                .getSharedObject(AuthenticationManagerBuilder.class)
+    public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
+        AuthenticationManagerBuilder authManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authManagerBuilder
                 .userDetailsService(userDetailsService)
-                .passwordEncoder(passwordEncoder()) // uwaga na to
-                .and()
-                .build();
+                .passwordEncoder(passwordEncoder());
+        return authManagerBuilder.build();
     }
 
     @Bean
