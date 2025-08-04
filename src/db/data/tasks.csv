@@ -1,0 +1,10 @@
+"task_id";"title";"description";"creation_date";"due_date";"completion_date";"user_id"
+1;"Buy groceries";"Buy milk, eggs, and bread";"2025-06-20";"2025-06-21";"";1
+2;"Fix login bug";"Resolve issue with login page validation";"2025-06-18";"2025-06-25";"2025-07-24";2
+3;"Prepare presentation";"Slides for Monday team meeting";"2025-06-15";"2025-06-28";"";1
+4;"Update resume";"Add recent job experiences";"2025-06-10";"2025-06-30";"";3
+5;"Workout";"Go for a 30-minute run";"2025-06-27";"2025-06-27";"";4
+6;"Submit tax forms";"Submit 2025 Q2 forms";"2025-06-05";"2025-06-30";"";3
+7;"Clean apartment";"General cleaning and organizing";"2025-06-22";"2025-06-29";"2025-07-19";2
+8;"Read book";"Finish reading ""Clean Code""";"2025-06-21";"2025-07-10";"";4
+9;"Deploy app";"Deploy version 1.0 to production";"2025-06-23";"2025-06-30";"";1

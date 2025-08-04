@@ -13,9 +13,6 @@ public class TaskTrackerApplication {
 
     public static void main(String[] args) {
         ApplicationContext context = SpringApplication.run(TaskTrackerApplication.class, args);
-//        var taskDisplayer = context.getBean(TaskDisplayer.class);
-//        taskDisplayer.setTaskDisplay(new ConsoleDisplay());
-//        taskDisplayer.displayMessage("OMG! Is this dependancies work?");
     }
 
 }
