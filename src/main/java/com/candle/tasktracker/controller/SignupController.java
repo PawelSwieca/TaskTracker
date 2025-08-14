@@ -19,11 +19,6 @@ public class SignupController {
         this.userService = userService;
     }
 
-//    @GetMapping("/signup")
-//    public String signup() {
-//        return "signup";
-//    }
-
     @GetMapping("/signup")
     public String signup(Model model) {
         model.addAttribute("userDto", new UserRegistrationDto());
